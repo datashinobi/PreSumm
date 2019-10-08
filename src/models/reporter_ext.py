@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 
 from others.logging import logger
-
+from azureml.core.run import Run
 
 def build_report_manager(opt):
     if opt.tensorboard:
@@ -156,6 +156,63 @@ class ReportMgr(ReportMgrBase):
                                        lr,
                                        step)
 
+
+class AmlReportMgr(ReportMgrBase):
+    def __init__(self, report_every, start_time=-1., tensorboard_writer=None):
+        """
+        A report manager that writes statistics on standard output as well as
+        (optionally) TensorBoard and Azure Machine Learning
+
+        Args:
+            report_every(int): Report status every this many sentences
+            tensorboard_writer(:obj:`tensorboard.SummaryWriter`):
+                The TensorBoard Summary writer to use or None
+        """
+        super(ReportMgr, self).__init__(report_every, start_time)
+        self.tensorboard_writer = tensorboard_writer
+        self.run = Run.get_context()
+
+    def maybe_log_tensorboard(self, stats, prefix, learning_rate, step):
+        if self.tensorboard_writer is not None:
+            stats.log_tensorboard(
+                prefix, self.tensorboard_writer, learning_rate, step)
+
+    def _report_training(self, step, num_steps, learning_rate,
+                         report_stats):
+        """
+        See base class method `ReportMgrBase.report_training`.
+        """
+        report_stats.output(step, num_steps,
+                            learning_rate, self.start_time)
+
+        # Log the progress using the number of batches on the x-axis.
+        self.maybe_log_tensorboard(report_stats,
+                                   "progress",
+                                   learning_rate,
+                                   self.progress_step)
+        report_stats = Statistics()
+
+        return report_stats
+
+        def _report_step(self, lr, step, train_stats=None, valid_stats=None):
+        """
+        See base class method `ReportMgrBase.report_step`.
+        """
+        if train_stats is not None:
+            self.log('Train xent: %g' % train_stats.xent())
+            self.run.log('xent',train_stats.xent())
+            self.maybe_log_tensorboard(train_stats,
+                                       "train",
+                                       lr,
+                                       step)
+
+        if valid_stats is not None:
+            self.log('Validation xent: %g at step %d' % (valid_stats.xent(), step))
+            self.run.log('xent',valid_stats.xent())
+            self.maybe_log_tensorboard(valid_stats,
+                                       "valid",
+                                       lr,
+                                       step)
 
 class Statistics(object):
     """
