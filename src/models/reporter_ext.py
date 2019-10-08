@@ -196,7 +196,7 @@ class AmlReportMgr(ReportMgrBase):
 
     def _report_step(self, lr, step, train_stats=None, valid_stats=None):
         """
-        See base class method `ReportMgrBase.report_step`.
+        track cross entropy through azure ML run`.
         """
         if train_stats is not None:
             self.log('Train xent: %g' % train_stats.xent())
