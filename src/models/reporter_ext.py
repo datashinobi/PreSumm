@@ -194,7 +194,7 @@ class AmlReportMgr(ReportMgrBase):
 
         return report_stats
 
-        def _report_step(self, lr, step, train_stats=None, valid_stats=None):
+    def _report_step(self, lr, step, train_stats=None, valid_stats=None):
         """
         See base class method `ReportMgrBase.report_step`.
         """
